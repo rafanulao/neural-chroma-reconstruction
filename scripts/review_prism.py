@@ -21,7 +21,8 @@ def review(root, target_epoch=25):
             results.append({"model": name, "status": "awaiting metrics"})
             continue
         latest = rows[-1]
-        best = min(rows, key=lambda row: row["validation"]["chroma_l1"])
+        best_l1 = min(rows, key=lambda row: row["validation"]["chroma_l1"])
+        best_psnr = max(rows, key=lambda row: row["validation"]["chroma_psnr"])
         recent = rows[-5:]
         manifest = directory / "manifest.jsonl"
         digest = (
@@ -38,8 +39,10 @@ def review(root, target_epoch=25):
                 ),
                 "epoch": latest["epoch"],
                 "planned_epochs": latest["epochs"],
-                "best_epoch": best["epoch"],
-                "best_chroma_l1": best["validation"]["chroma_l1"],
+                "best_l1_epoch": best_l1["epoch"],
+                "best_chroma_l1": best_l1["validation"]["chroma_l1"],
+                "best_psnr_epoch": best_psnr["epoch"],
+                "best_chroma_psnr": best_psnr["validation"]["chroma_psnr"],
                 "latest_chroma_l1": latest["validation"]["chroma_l1"],
                 "recent_mean_chroma_l1": sum(
                     r["validation"]["chroma_l1"] for r in recent

@@ -341,11 +341,19 @@ def _train(config, root, destination, resume, stop_after_epoch):
     if resume_path is not None and resume_path.resolve() != last_path.resolve():
         raise ValueError(
             "Resume must use this output directory's last.pth. To relocate a run, "
-            "copy its entire directory, including best.pth and manifest.jsonl."
+            "copy its entire directory, including best_l1.pth, best_psnr.pth, "
+            "and manifest.jsonl."
         )
     if resume_path is None and any(
         (destination / name).exists()
-        for name in ("last.pth", "best.pth", "config.snapshot.json", "history.jsonl")
+        for name in (
+            "last.pth",
+            "best_l1.pth",
+            "best_psnr.pth",
+            "best.pth",
+            "config.snapshot.json",
+            "history.jsonl",
+        )
     ):
         raise FileExistsError(
             f"Run already exists at {destination}; use --resume auto or a new output root"
@@ -385,9 +393,22 @@ def _train(config, root, destination, resume, stop_after_epoch):
         if discriminator
         else None
     )
-    first_epoch, best_score, best_epoch, checkpoint = 1, float("inf"), 0, None
+    first_epoch, checkpoint = 1, None
+    best_l1, best_l1_epoch = float("inf"), 0
+    best_psnr, best_psnr_epoch = -float("inf"), 0
     if resume_path is not None:
         _, checkpoint = load_checkpoint(resume_path, "cpu")
+        selection_fields = {
+            "best_l1",
+            "best_l1_epoch",
+            "best_psnr",
+            "best_psnr_epoch",
+        }
+        if not selection_fields.issubset(checkpoint):
+            raise ValueError(
+                "Resume checkpoint predates separate L1/PSNR selection; "
+                "start this training run in a new output directory"
+            )
         if checkpoint["fingerprint"] != fingerprint:
             raise ValueError(
                 "Resume configuration/manifest differs from checkpoint; use a new run for changed experiments"
@@ -400,7 +421,10 @@ def _train(config, root, destination, resume, stop_after_epoch):
             d_optimizer.load_state_dict(checkpoint["d_optimizer"])
             d_schedule.load_state_dict(checkpoint["d_scheduler"])
         first_epoch = checkpoint["epoch"] + 1
-        best_score, best_epoch = checkpoint["best_score"], checkpoint["best_epoch"]
+        best_l1 = checkpoint["best_l1"]
+        best_l1_epoch = checkpoint["best_l1_epoch"]
+        best_psnr = checkpoint["best_psnr"]
+        best_psnr_epoch = checkpoint["best_psnr_epoch"]
         torch.set_rng_state(checkpoint["torch_rng"])
         if device.type == "cuda" and checkpoint.get("cuda_rng"):
             torch.cuda.set_rng_state_all(checkpoint["cuda_rng"])
@@ -580,10 +604,14 @@ def _train(config, root, destination, resume, stop_after_epoch):
             "training": {key: value / samples for key, value in totals.items()},
             "validation": validation,
         }
-        score = validation["chroma_l1"]
-        improved = score < best_score
-        if improved:
-            best_score, best_epoch = score, epoch
+        l1_score = validation["chroma_l1"]
+        psnr_score = validation["chroma_psnr"]
+        improved_l1 = l1_score < best_l1
+        improved_psnr = psnr_score > best_psnr
+        if improved_l1:
+            best_l1, best_l1_epoch = l1_score, epoch
+        if improved_psnr:
+            best_psnr, best_psnr_epoch = psnr_score, epoch
         schedule.step()
         if d_schedule and factor:
             d_schedule.step()
@@ -594,8 +622,10 @@ def _train(config, root, destination, resume, stop_after_epoch):
             "config": config,
             "fingerprint": fingerprint,
             "epoch": epoch,
-            "best_score": best_score,
-            "best_epoch": best_epoch,
+            "best_l1": best_l1,
+            "best_l1_epoch": best_l1_epoch,
+            "best_psnr": best_psnr,
+            "best_psnr_epoch": best_psnr_epoch,
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "scheduler": schedule.state_dict(),
@@ -609,8 +639,10 @@ def _train(config, root, destination, resume, stop_after_epoch):
                 d_optimizer=d_optimizer.state_dict(),
                 d_scheduler=d_schedule.state_dict(),
             )
-        if improved:
-            save_checkpoint(destination / "best.pth", payload)
+        if improved_l1:
+            save_checkpoint(destination / "best_l1.pth", payload)
+        if improved_psnr:
+            save_checkpoint(destination / "best_psnr.pth", payload)
         save_checkpoint(last_path, payload)
         with history_path.open("a") as output:
             output.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
@@ -618,9 +650,12 @@ def _train(config, root, destination, resume, stop_after_epoch):
         print(json.dumps(row, sort_keys=True, allow_nan=False), flush=True)
     result = {
         "name": config["name"],
-        "best_epoch": best_epoch,
-        "best_chroma_l1": best_score,
-        "best_checkpoint": str(destination / "best.pth"),
+        "best_l1_epoch": best_l1_epoch,
+        "best_chroma_l1": best_l1,
+        "best_l1_checkpoint": str(destination / "best_l1.pth"),
+        "best_psnr_epoch": best_psnr_epoch,
+        "best_chroma_psnr": best_psnr,
+        "best_psnr_checkpoint": str(destination / "best_psnr.pth"),
         "last_checkpoint": str(last_path),
         "completed_epochs": history[-1]["epoch"] if history else 0,
     }

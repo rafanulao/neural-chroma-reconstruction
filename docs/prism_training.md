@@ -175,15 +175,17 @@ Read a compact report across the four core models (safe on a login node):
   --output-root /ocean/projects/cis260224p/shared/$USER/checkpoints/prism/prism_coco
 ```
 
-The report includes the latest epoch, best validation chroma L1 and its epoch,
-recent-five-epoch mean L1, latest RGB PSNR/SSIM, and chroma PSNR gain over bilinear.
+The report includes the latest epoch, best validation chroma L1 and PSNR with
+their epochs, recent-five-epoch mean L1, latest RGB PSNR/SSIM, and chroma PSNR
+gain over bilinear.
 It is marked ready only when all four reach epoch 25 with matching manifests.
 It does not select or submit further experiments automatically. Review the full
 curves and per-degradation metrics before expanding the suite; these COCO runs
 remain development experiments rather than lossless-source research evidence.
 
-Each run saves atomic `last.pth` and `best.pth`, `history.jsonl`, `summary.json`,
-the resolved configuration, manifest, and code/package provenance. Checkpoints
+Each run saves atomic `last.pth`, `best_l1.pth`, and `best_psnr.pth`, plus
+`history.jsonl`, `summary.json`, the resolved configuration, manifest, and
+code/package provenance. Checkpoints
 include optimizer, cosine schedule, discriminator (where applicable), and RNG
 state. A run lock prevents two workers writing the same model directory.
 
@@ -197,10 +199,12 @@ For the four-model initial comparison, set `NCR_STOP_AFTER_EPOCH=25` when
 submitting. Leave `NCR_EPOCHS` unset to retain the 100-epoch cosine schedule.
 Resubmit without `NCR_STOP_AFTER_EPOCH` to continue the same run toward 100.
 Explicit resume paths must refer to that output directory's `last.pth`. To
-relocate an existing run, copy the entire run directory so its best checkpoint,
-history, and manifest remain available together.
+relocate an existing run, copy the entire run directory so both best checkpoints,
+history, and manifest remain available together. Checkpoints from the earlier
+single-`best.pth` trainer cannot be resumed under the dual-selection contract;
+start those experiments in a new output directory.
 
-The best checkpoint may precede uncertainty warmup. The standalone evaluator
+Either best checkpoint may precede uncertainty warmup. The standalone evaluator
 reports that state and omits its untrained confidence diagnostics/safe variant;
 evaluate a later checkpoint explicitly to study its trained uncertainty heads.
 
@@ -222,9 +226,9 @@ lossless dataset:
 ```bash
 python3 scripts/evaluate_prism.py \
   --config research/configs/prism.json \
-  --weights runs/prism_lossless/prism_residual/best.pth \
-            runs/prism_lossless/prism_polar/best.pth \
-            runs/prism_lossless/prism_cartesian_prob/best.pth \
+  --weights runs/prism_lossless/prism_residual/best_psnr.pth \
+            runs/prism_lossless/prism_polar/best_psnr.pth \
+            runs/prism_lossless/prism_cartesian_prob/best_psnr.pth \
   --manifest research/manifests/lossless_full.jsonl \
   --dataset-root data/research_lossless \
   --output-dir runs/prism_comparison --device cuda
@@ -270,10 +274,10 @@ After choosing checkpoints using validation, submit from the repository:
 
 ```bash
 sbatch --export=ALL scripts/bridges2/evaluate_prism_test2014.sbatch \
-  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_residual/best.pth \
-  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_polar/best.pth \
-  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_polar_prob/best.pth \
-  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_cartesian_prob/best.pth
+  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_residual/best_psnr.pth \
+  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_polar/best_psnr.pth \
+  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_polar_prob/best_psnr.pth \
+  /ocean/projects/cis260224p/shared/brios/checkpoints/prism/prism_coco/prism_cartesian_prob/best_psnr.pth
 ```
 
 This requests one L40S GPU for at most eight hours. Evaluation runtime for this

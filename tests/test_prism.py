@@ -211,14 +211,20 @@ class PrismTests(unittest.TestCase):
                         checkpoint["metrics"]["learning_rate"],
                         config["training"]["learning_rate"],
                     )
-                    self.assertTrue(Path(resumed["best_checkpoint"]).is_file())
+                    self.assertTrue(Path(resumed["best_l1_checkpoint"]).is_file())
+                    self.assertTrue(Path(resumed["best_psnr_checkpoint"]).is_file())
                     history = Path(config["output_dir"]) / "history.jsonl"
+                    rows = [json.loads(s) for s in history.read_text().splitlines()]
+                    self.assertEqual([row["epoch"] for row in rows], [1, 2])
+                    _, best_l1 = load_checkpoint(resumed["best_l1_checkpoint"])
+                    _, best_psnr = load_checkpoint(resumed["best_psnr_checkpoint"])
                     self.assertEqual(
-                        [
-                            json.loads(s)["epoch"]
-                            for s in history.read_text().splitlines()
-                        ],
-                        [1, 2],
+                        best_l1["epoch"],
+                        min(rows, key=lambda row: row["validation"]["chroma_l1"])["epoch"],
+                    )
+                    self.assertEqual(
+                        best_psnr["epoch"],
+                        max(rows, key=lambda row: row["validation"]["chroma_psnr"])["epoch"],
                     )
                     with self.assertRaises(FileExistsError):
                         train_prism(config, ROOT)
@@ -228,7 +234,7 @@ class PrismTests(unittest.TestCase):
                         train_prism(changed, ROOT, resume="auto")
             # Compare all trained models, including the conditioned model, on identical test inputs.
             weights = [
-                Path(suite["output_dir"]) / entry["name"] / "best.pth"
+                Path(suite["output_dir"]) / entry["name"] / "best_psnr.pth"
                 for entry in suite["experiments"]
             ]
             report = evaluate_prism(
@@ -342,8 +348,8 @@ class PrismTests(unittest.TestCase):
                     "--config",
                     "research/configs/prism_smoke.json",
                     "--weights",
-                    str(root / "runs/prism_polar_prob/best.pth"),
-                    str(root / "runs/prism_gan/best.pth"),
+                    str(root / "runs/prism_polar_prob/best_psnr.pth"),
+                    str(root / "runs/prism_gan/best_psnr.pth"),
                     "--manifest",
                     "research/manifests/fixture.jsonl",
                     "--dataset-root",

@@ -29,7 +29,7 @@ def snapshot(destination, storage):
         group = 0 if trained else 1 + smoke_index // 4
         smoke_index += int(not trained)
         selected.append({"name": name, "kind": "prism", "group": group,
-                         "source": str(checkpoints / "prism" / parent / name / "best.pth"),
+                         "source": str(checkpoints / "prism" / parent / name / "best_psnr.pth"),
                          "training_status": "full_dataset_checkpoint" if trained else "two_epoch_100_image_smoke",
                          "overlap_audit": "known_training_sources_excluded"})
     for name, kind, version, path in (
@@ -78,7 +78,7 @@ def snapshot(destination, storage):
                "baseline": "bilinear", "original_images": len(records), "images": len(retained),
                "additional_overlap_exclusions": len(records) - len(retained),
                "exclusion_sources": [{"path": str(p), "sha256": sha256_file(p)} for p in exclusion_sources],
-               "selection": "Best validation checkpoint for each distinct variant; historical V5/V6 use their sole available checkpoint. Smoke/benchmark duplicates of a full-data model are not additional variants."}
+               "selection": "Highest validation chroma-PSNR checkpoint for each distinct Prism variant; historical V5/V6 use their sole available checkpoint. Smoke/benchmark duplicates of a full-data model are not additional variants."}
     (destination / "campaign.json").write_text(json.dumps(payload, indent=2) + "\n")
     code = destination / "code"
     for folder in ("chroma", "scripts", "research/configs"):

@@ -23,6 +23,7 @@ class PrismReviewTests(unittest.TestCase):
                     "epochs": 100,
                     "validation": {
                         "chroma_l1": 0.004,
+                        "chroma_psnr": 45.0,
                         "rgb_psnr": 40.0,
                         "rgb_ssim": 0.97,
                         "chroma_psnr_gain_db": 2.0,
@@ -32,7 +33,8 @@ class PrismReviewTests(unittest.TestCase):
                 (run / "manifest.jsonl").write_text("same manifest\n")
             result = review(directory)
             self.assertTrue(result["ready_for_comparison"])
-            self.assertEqual(result["runs"][0]["best_epoch"], 25)
+            self.assertEqual(result["runs"][0]["best_l1_epoch"], 25)
+            self.assertEqual(result["runs"][0]["best_psnr_epoch"], 25)
             (Path(directory) / CORE[0] / "manifest.jsonl").write_text("different\n")
             self.assertFalse(review(directory)["ready_for_comparison"])
 
