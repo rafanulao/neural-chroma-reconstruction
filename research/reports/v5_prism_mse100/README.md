@@ -35,3 +35,23 @@ Submit or resume with:
 ```bash
 bash scripts/bridges2/submit_v5_prism_mse.sh
 ```
+
+## Loss curves
+
+`loss_curves.tex` is a standalone LaTeX/PGFPlots comparison of the matched
+100-epoch Prism U-Net MSE and V5 MSE runs. It contains two panels: the exact
+training chroma-MSE objective and the validation chroma-L1 metric recorded by
+both histories. Prism's history does not record aggregate validation MSE, so
+the graph does not infer one from its mean per-image PSNR.
+
+Regenerate the CSV and LaTeX source from the committed JSONL histories with:
+
+```bash
+python scripts/generate_v5_prism_loss_graphs.py
+```
+
+Compile the standalone figure from this report directory with:
+
+```bash
+latexmk -pdf loss_curves.tex
+```
