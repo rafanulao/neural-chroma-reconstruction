@@ -1,0 +1,32 @@
+flowchart LR
+    IMG["<b>Observed image</b><br/>Y + low-resolution Cr/Cb"]:::input --> Y["Full-resolution Y"]:::bypass
+    Y --> FEAT["<b>16 features per pixel</b><br/>position · luma · multiscale blur<br/>residual · gradients"]:::stem
+    FEAT --> TRAIN["Area-downsampled<br/>training rows"]:::latent
+    FEAT --> TEST["Full-resolution<br/>prediction rows"]:::latent
+    IMG --> CHROMA["Observed low-resolution<br/>Cr/Cb targets"]:::bypass
+
+    TRAIN --> CR["Hosted TabPFN regressor<br/><b>fit Cr</b>"]:::external
+    CHROMA --> CR
+    TRAIN --> CB["Hosted TabPFN regressor<br/><b>fit Cb</b>"]:::external
+    CHROMA --> CB
+    TEST --> CR
+    TEST --> CB
+    CR --> PCR["Full-resolution Cr"]:::head
+    CB --> PCB["Full-resolution Cb"]:::head
+    Y --> JOIN["Concatenate<br/>and clip chroma"]:::op
+    PCR --> JOIN
+    PCB --> JOIN
+    JOIN --> OUT["<b>Reconstructed YCrCb</b>"]:::output
+
+    NOTE["Two regressors are fit independently<br/>for every image. Hosted model internals<br/>are external to this repository."]:::note
+    CR -.-> NOTE
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238,stroke-width:2px;
+    classDef latent fill:#fff8e9,stroke:#ba6a22,color:#132238;
+    classDef external fill:#f3edfb,stroke:#7957a8,color:#132238,stroke-width:3px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

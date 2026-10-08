@@ -1,0 +1,23 @@
+flowchart LR
+    X["<b>Input YCrCb</b><br/>3 x H x W"]:::input --> ENC["<b>Encoder</b><br/>conv blocks: 32 → 64 → 128<br/>three 2 x 2 max-pools"]:::encoder
+    ENC --> B["<b>Bottleneck</b><br/>conv block: 128 → 256<br/>H/8 x W/8"]:::trunk
+    B --> DEC["<b>Decoder</b><br/>transpose conv + skip concat<br/>128 → 64 → 32"]:::decoder
+    ENC -. three scale skips .-> DEC
+    DEC --> H["1 x 1 conv + sigmoid<br/>32 → 3"]:::head
+    H --> YH["<b>Generated YCrCb</b><br/>3 x H x W"]:::output
+
+    YH -.-> GAN["<b>PatchGAN · training only</b><br/>target or generated YCrCb<br/>four 4 x 4 stride-2 stages<br/>32 → 64 → 128 → 256"]:::aux
+    T["Target YCrCb"]:::input -.-> GAN
+    GAN --> LOGIT["Patch logits<br/>256 → 1"]:::head
+
+    P["Generator 1.93M parameters<br/>Discriminator 0.69M parameters"]:::note
+    B -.-> P
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef encoder fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef decoder fill:#eef8f5,stroke:#4f8a72,color:#132238;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef aux fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef output fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

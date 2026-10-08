@@ -1,0 +1,43 @@
+flowchart LR
+    X["<b>Input X</b><br/>[Y, Cr, Cb]"]:::input --> STEM["3 x 3 conv<br/>3 → width"]:::stem
+    META["Known degradation<br/>2-D siting + 5 filters"]:::input --> FC["linear 7 → width"]:::aux
+    FC -. optional add .-> STEM
+
+    STEM --> BACK{"<b>Backbone</b>"}:::decision
+    BACK --> RES["Residual<br/>8 blocks"]:::trunk
+    BACK --> NAF["NAF-style<br/>8 blocks"]:::trunk
+    BACK --> UNET["U-Net features<br/>3 scales"]:::trunk
+    RES --> F["Shared features"]:::latent
+    NAF --> F
+    UNET --> F
+
+    F --> REP{"<b>Mean head</b>"}:::decision
+    REP --> CART["Cartesian<br/>2 residual maps"]:::head
+    REP --> POLAR["Polar<br/>δA + phase vector"]:::head
+    X --> DEC["Baseline-preserving<br/>chroma decode"]:::op
+    CART --> DEC
+    POLAR --> DEC
+    DEC --> OUT["<b>Mean YCrCb</b><br/>unchanged Y"]:::output
+
+    F -.-> UH["Optional uncertainty head<br/>scale + κ"]:::aux
+    UH --> SAFE["Confidence blend<br/>toward baseline"]:::aux
+    DEC --> SAFE
+    SAFE --> SO["<b>Safe YCrCb</b>"]:::output
+
+    GAN["Conditional PatchGAN<br/>observation + candidate chroma"]:::adversary
+    OUT -. prism_gan only .-> GAN
+
+    NOTE["<b>12 matched experiments</b><br/>backbone · representation · uncertainty<br/>conditioning · forward loss · adversarial loss"]:::note
+    BACK -.-> NOTE
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef decision fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef latent fill:#eef8f5,stroke:#4f8a72,color:#132238;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef aux fill:#f3edfb,stroke:#7957a8,color:#132238,stroke-width:2px;
+    classDef adversary fill:#fdecec,stroke:#a94b4b,color:#132238,stroke-width:2px;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

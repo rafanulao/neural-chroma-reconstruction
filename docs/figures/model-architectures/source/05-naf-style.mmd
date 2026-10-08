@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph MODEL["NAF-style chroma refiner · 0.25M parameters"]
+      direction TB
+      X["<b>Input YCrCb</b>"]:::input --> STEM["3 x 3 conv<br/>3 → 64"]:::stem
+      STEM --> BLOCKS["<b>8 NAF-style blocks</b><br/>64 channels"]:::trunk
+      BLOCKS --> HEAD["3 x 3 conv<br/>64 → 2"]:::head
+      HEAD --> ADD["Add baseline Cr/Cb"]:::op
+      X --> ADD
+      ADD --> OUT["<b>Output</b><br/>unchanged Y + refined chroma"]:::output
+    end
+
+    subgraph BLOCK["One NAF-style block"]
+      direction TB
+      F["features"]:::input --> N1["LayerNorm"]:::aux
+      N1 --> P1["<b>Spatial mixing</b><br/>1 x 1 expand → 3 x 3 depthwise<br/>→ SimpleGate → channel attention<br/>→ 1 x 1 project × learned beta"]:::aux
+      P1 --> A1(("+")):::op
+      F --> A1
+      A1 --> N2["LayerNorm"]:::aux
+      N2 --> P2["<b>Channel mixing</b><br/>1 x 1 expand → SimpleGate<br/>→ 1 x 1 project × learned gamma"]:::aux
+      P2 --> A2(("+")):::op
+      A1 --> A2
+      A2 --> FO["features"]:::output
+    end
+    BLOCKS -. repeated block .-> F
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef aux fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238,stroke-width:2px;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;

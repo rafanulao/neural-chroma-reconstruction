@@ -1,0 +1,29 @@
+.nodeLabel,
+.edgeLabel,
+.label,
+.cluster-label {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.nodeLabel p {
+  line-height: 1.22 !important;
+}
+
+.edgeLabel p {
+  background: #ffffff !important;
+  padding: 2px 5px !important;
+}
+
+.flowchart-link {
+  stroke-width: 2.2px !important;
+}
+
+.marker {
+  fill: #46566d !important;
+  stroke: #46566d !important;
+}
+
+.cluster rect {
+  rx: 10px !important;
+  ry: 10px !important;
+}

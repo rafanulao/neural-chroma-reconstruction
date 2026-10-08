@@ -1,0 +1,22 @@
+flowchart TB
+    OBS["4:2:0 observation<br/><b>Y full resolution + interpolated Cr/Cb</b>"]:::input
+
+    OBS --> V5["<b>V5</b><br/>U-Net generates all 3 channels<br/>optional PatchGAN"]:::model
+    OBS --> V6["<b>V6</b><br/>8-block Cartesian<br/>chroma-residual CNN"]:::model
+    OBS --> V7["<b>V7</b><br/>polar mean + amplitude/phase<br/>uncertainty and safe output"]:::model
+    OBS --> BASE["<b>Research baselines</b><br/>configurable residual, SRCNN,<br/>NAF-style"]:::model
+    OBS --> PRISM["<b>Prism family</b><br/>residual / NAF / U-Net<br/>Cartesian / polar heads"]:::model
+    RGB["Li2026 analytic<br/>RGB baseline"]:::input --> HYBRID["<b>Li2026 hybrid</b><br/>protected RGB correction<br/>from V6 or Prism"]:::model
+    LOW["Observed low-resolution<br/>chroma samples"]:::input --> TAB["<b>TabPFN pilot</b><br/>two per-image hosted regressors"]:::model
+
+    V5 --> O1["Reconstructed YCrCb"]:::output
+    V6 --> O1
+    V7 --> O1
+    BASE --> O1
+    PRISM --> O1
+    HYBRID --> O2["Refined RGB"]:::output
+    TAB --> O1
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef model fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef output fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;

@@ -1,0 +1,21 @@
+flowchart LR
+    X["<b>Input X</b><br/>[Y, Cr, Cb]<br/>3 x H x W"]:::input --> STEM["3 x 3 convolution<br/>3 → 64"]:::stem
+    STEM --> BODY["<b>8 residual blocks</b><br/>3 x 3 conv → ReLU → 3 x 3 conv<br/>64 channels + identity skip"]:::trunk
+    BODY --> HEAD["3 x 3 convolution<br/>64 → 2"]:::head
+    HEAD --> R["Predicted chroma<br/>residual R"]:::latent
+    X --> C0["Baseline<br/>[Cr, Cb]"]:::bypass
+    C0 --> ADD(("+")):::op
+    R --> ADD
+    X --> Y["Y bypass"]:::bypass
+    ADD --> JOIN["Concatenate"]:::op
+    Y --> JOIN
+    JOIN --> OUT["<b>Output</b><br/>[Y, Cr + Rcr, Cb + Rcb]"]:::output
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef latent fill:#fff8e9,stroke:#ba6a22,color:#132238;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238,stroke-width:2px;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;

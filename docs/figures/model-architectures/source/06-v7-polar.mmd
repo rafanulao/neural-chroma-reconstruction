@@ -1,0 +1,36 @@
+flowchart LR
+    X["<b>Input X</b><br/>[Y, Cr, Cb]"]:::input --> STEM["3 x 3 conv<br/>3 → 64"]:::stem
+    STEM --> BODY["<b>8 residual blocks</b><br/>64 channels"]:::trunk
+    BODY --> HEAD["5-map head"]:::head
+
+    X --> BASE["Baseline polar<br/>A₀, φ₀"]:::bypass
+    HEAD --> MEAN["δA + 2-D phase vector"]:::latent
+    BASE --> DECODE["Constrained polar decode<br/>Ā, φ̄"]:::op
+    MEAN --> DECODE
+    DECODE --> CART["Polar → Cr/Cb"]:::op
+    CART --> OM["<b>Mean output</b><br/>Y + reconstructed chroma"]:::output
+    X --> OM
+
+    HEAD --> UNC["raw scale + concentration"]:::aux
+    UNC --> DIST["Laplace scale bA<br/>von Mises κ"]:::aux
+    DIST --> CONF["amplitude + phase<br/>confidence"]:::aux
+    BASE --> SAFE["Blend correction<br/>toward baseline"]:::op
+    DECODE --> SAFE
+    CONF --> SAFE
+    SAFE --> OS["<b>Safe output</b><br/>uncertainty-gated chroma"]:::output
+    X --> OS
+
+    LOSS["Training: Cartesian L1<br/>+ amplitude NLL + phase NLL<br/>+ optional forward consistency"]:::note
+    DECODE -. supervised by .-> LOSS
+    DIST -. supervised by .-> LOSS
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef latent fill:#fff8e9,stroke:#ba6a22,color:#132238;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef aux fill:#f3edfb,stroke:#7957a8,color:#132238,stroke-width:2px;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

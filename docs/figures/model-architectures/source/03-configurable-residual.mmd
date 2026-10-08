@@ -1,0 +1,30 @@
+flowchart LR
+    X["<b>Input</b><br/>[Y, Cr, Cb]"]:::input --> SELECT{"Luma<br/>guidance?"}:::decision
+    SELECT --> I3["Luma-guided input<br/>3 channels"]:::variant
+    SELECT --> I2["Chroma-only input<br/>2 channels"]:::variant
+    I3 --> STEM["3 x 3 conv<br/>input → width"]:::stem
+    I2 --> STEM
+    STEM --> BODY["<b>depth blocks</b><br/>two 3 x 3 convolutions<br/>optional block skip"]:::trunk
+    BODY --> HEAD["3 x 3 conv<br/>width → 2"]:::head
+    HEAD --> MODE{"Global<br/>residual?"}:::decision
+    X --> C0["Baseline Cr/Cb"]:::bypass
+    C0 --> MODE
+    MODE --> ADD["Residual output<br/>baseline + prediction"]:::variant
+    MODE --> SIG["Direct output<br/>sigmoid prediction"]:::variant
+    X --> Y["Y bypass"]:::bypass
+    ADD --> OUT["<b>Output YCrCb</b>"]:::output
+    SIG --> OUT
+    Y --> OUT
+
+    NOTE["<b>Checked-in ablations</b><br/>depth: 4 / 8 / 12 · width: 32 / 64 / 96<br/>with/without luma · with/without skips<br/>L1 / MSE / Charbonnier / edge loss"]:::note
+    BODY -. configuration .-> NOTE
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef decision fill:#f3edfb,stroke:#7957a8,color:#132238,stroke-width:2px;
+    classDef variant fill:#f8f5fc,stroke:#8e75ad,color:#132238;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

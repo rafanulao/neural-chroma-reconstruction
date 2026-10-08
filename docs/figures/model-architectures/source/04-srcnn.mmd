@@ -1,0 +1,26 @@
+flowchart LR
+    X["<b>Input</b><br/>YCrCb or Cr/Cb"]:::input --> C1["9 x 9 convolution<br/>input → 64"]:::stem
+    C1 --> R1["ReLU"]:::op
+    R1 --> C2["1 x 1 convolution<br/>64 → 32"]:::trunk
+    C2 --> R2["ReLU"]:::op
+    R2 --> C3["5 x 5 convolution<br/>32 → 2"]:::head
+    C3 --> P["Chroma prediction"]:::latent
+    X --> C0["Baseline Cr/Cb"]:::bypass
+    C0 --> ADD(("+")):::op
+    P --> ADD
+    X --> Y["Y bypass"]:::bypass
+    ADD --> OUT["<b>Output YCrCb</b>"]:::output
+    Y --> OUT
+
+    PARAM["19,298 parameters<br/>at width 64"]:::note
+    C2 -.-> PARAM
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef stem fill:#eef4fb,stroke:#5b7898,color:#132238;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef latent fill:#fff8e9,stroke:#ba6a22,color:#132238;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;
+    classDef note fill:#ffffff,stroke:#8b98a9,color:#132238,stroke-dasharray:5 4;

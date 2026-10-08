@@ -1,0 +1,29 @@
+flowchart LR
+    RGB["<b>Source RGB</b><br/>uint8"]:::input --> CODEC["Analytic Li2026 pipeline<br/>transform + 4:2:0 + interpolation"]:::analytic
+    CODEC --> BASE["RGB baseline"]:::latent
+    CODEC --> KEEP["Retained-site mask"]:::bypass
+    BASE --> ADAPT["RGB → model YCrCb"]:::op
+    ADAPT --> BACK{"Neural backbone"}:::decision
+    BACK --> V6["V6 refiner"]:::trunk
+    BACK --> PRISM["Prism refiner<br/>known degradation"]:::trunk
+    V6 --> DIFF["Predicted − baseline<br/>chroma"]:::head
+    PRISM --> DIFF
+    DIFF --> INV["Exact zero-luma<br/>chroma → RGB correction"]:::op
+    INV --> MASK["Zero protected pixels<br/>retained sites + optional flat regions"]:::op
+    KEEP --> MASK
+    BASE -.-> MASK
+    MASK --> GAIN["× tanh learned gain<br/>initialized at zero"]:::aux
+    BASE --> ADD(("+")):::op
+    GAIN --> ADD
+    ADD --> OUT["<b>Refined RGB</b><br/>retained sites unchanged"]:::output
+
+    classDef input fill:#eaf2ff,stroke:#356aa0,color:#132238,stroke-width:2px;
+    classDef analytic fill:#eef4fb,stroke:#5b7898,color:#132238,stroke-width:2px;
+    classDef latent fill:#fff8e9,stroke:#ba6a22,color:#132238;
+    classDef bypass fill:#f3edfb,stroke:#7957a8,color:#132238;
+    classDef decision fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef trunk fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:2px;
+    classDef head fill:#fff3df,stroke:#ba6a22,color:#132238,stroke-width:2px;
+    classDef aux fill:#f3edfb,stroke:#7957a8,color:#132238,stroke-width:2px;
+    classDef op fill:#ffffff,stroke:#58677a,color:#132238;
+    classDef output fill:#e9f7ef,stroke:#38815a,color:#132238,stroke-width:3px;

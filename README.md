@@ -14,6 +14,8 @@ experiments derived from the model review, including residual/NAF baselines,
 polar and Cartesian uncertainty variants, degradation conditioning, measurement
 consistency, and chroma-only U-Nets. See [Prism training and evaluation](docs/prism_training.md)
 for the model map, smoke checks, Bridges-2 submission, monitoring, and resume commands.
+See [model architecture diagrams](docs/model_architectures.md) for the layer and
+data-flow diagrams of every distinct learned architecture used in the repository.
 
 Saved experiment weights and their run metadata are under [models/experiments](models/experiments/README.md).
 The train, validation, and test image IDs are under [research/manifests/ids](research/manifests/ids/README.md);
